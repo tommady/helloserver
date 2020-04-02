@@ -1,27 +1,26 @@
-use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
-use std::thread;
+use async_std::io;
+use async_std::net::{TcpListener, TcpStream};
+use async_std::prelude::*;
+use async_std::task;
 
-fn main() {
-    let listener = TcpListener::bind("0.0.0.0:8080").unwrap();
+fn main() -> io::Result<()> {
+    task::block_on(async {
+        let listener = TcpListener::bind("0.0.0.0:8080").await?;
+        let mut incoming = listener.incoming();
 
-    for connection in listener.incoming() {
-        match connection {
-            Ok(stream) => {
-                thread::spawn(|| {
-                    handle_client(stream);
-                });
-            }
-            Err(e) => {
-                panic!(e);
-            }
+        while let Some(stream) = incoming.next().await {
+            let stream = stream?;
+            task::spawn(async {
+                handle_client(stream).await.unwrap();
+            });
         }
-    }
+        Ok(())
+    })
 }
 
-fn handle_client(mut stream: TcpStream) {
+async fn handle_client(mut stream: TcpStream) -> io::Result<()> {
     let mut buffer = [0; 512];
-    stream.read(&mut buffer).unwrap();
+    stream.read(&mut buffer).await?;
 
     let request = String::from_utf8_lossy(&buffer[..]);
     let request_line = request.lines().next().unwrap();
@@ -34,6 +33,8 @@ fn handle_client(mut stream: TcpStream) {
 
     let response = format!("{}Hi there, {} !", "HTTP/1.1 200 OK \r\n\r\n", path);
 
-    stream.write(response.as_bytes()).unwrap();
-    stream.flush().unwrap();
+    stream.write_all(response.as_bytes()).await?;
+    stream.flush().await?;
+
+    Ok(())
 }
