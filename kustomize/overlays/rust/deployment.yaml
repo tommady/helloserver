@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helloserver
+  namespace: helloserver-rust
+spec:
+  template:
+    metadata:
+      labels:
+        deployment: helloserver
+    spec:
+      containers:
+      - name: helloserver
+        image: tommady/helloserver:rust
+        ports:
+        - containerPort: 8080

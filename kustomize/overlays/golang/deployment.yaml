@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helloserver
+  namespace: helloserver-golang
+spec:
+  template:
+    metadata:
+      labels:
+        deployment: helloserver
+    spec:
+      containers:
+      - name: helloserver
+        image: tommady/helloserver:golang
+        ports:
+        - containerPort: 8080
